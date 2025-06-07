@@ -1,6 +1,6 @@
 import requests
 import threading
-from flask import Flask, request
+from flask import Flask
 import time
 
 app = Flask(__name__)
@@ -20,11 +20,17 @@ def home():
 @app.route('/check', methods=['GET'])
 def check_eur_usd():
     try:
-        response = requests.get(f'http://api.exchangeratesapi.io/v1/latest?access_key={API_KEY}&symbols=USD,EUR')
+        url = "https://api.apilayer.com/exchangerates_data/latest?base=EUR&symbols=USD"
+        headers = {
+            "apikey": API_KEY
+        }
+        response = requests.get(url, headers=headers)
         data = response.json()
+
         if 'rates' not in data:
             send_telegram_message(f"שגיאה בבדיקת שערים: {data}")
             return 'שגיאה בבדיקה: rates'
+
         rate = data['rates']['USD']
         send_telegram_message(f"שער EUR/USD: {rate}")
         return 'Message sent!'

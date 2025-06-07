@@ -6,7 +6,7 @@ import time
 app = Flask(__name__)
 
 BOT_TOKEN = '7665383679:AAGa263syK8FdyOiSXHLsUtKEKzFajbZJlM'
-CHAT_ID = '1589414763'  # ID שלך
+CHAT_ID = '1589414763'  # ודא שזה ה-Chat ID הנכון שלך
 
 def send_telegram_message(text):
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
@@ -14,7 +14,7 @@ def send_telegram_message(text):
 
 @app.route('/')
 def home():
-    return '✅ Bot is running!'
+    return 'Bot is running!'
 
 @app.route('/check', methods=['GET'])
 def check_eur_usd():
@@ -30,9 +30,20 @@ def check_eur_usd():
 
 def heartbeat():
     while True:
-        send_telegram_message("✅ הבוט פעיל ובודק שערים...")
-        time.sleep(3600)  # כל שעה
+        try:
+            response = requests.get("https://api.exchangerate.host/latest?base=EUR&symbols=USD")
+            data = response.json()
+            rate = data['rates']['USD']
+            if abs(rate - heartbeat.last_rate) >= 0.005:
+                direction = "📈 עלייה" if rate > heartbeat.last_rate else "📉 ירידה"
+                send_telegram_message(f"התראה: שינוי חד בשער EUR/USD ({direction}) ➡️ {rate}")
+            heartbeat.last_rate = rate
+        except Exception as e:
+            send_telegram_message(f"שגיאה בבדיקת שערים: {e}")
+        time.sleep(300)  # כל 5 דקות
+
+heartbeat.last_rate = 0.0
+threading.Thread(target=heartbeat, daemon=True).start()
 
 if __name__ == '__main__':
-    threading.Thread(target=heartbeat, daemon=True).start()
     app.run(host='0.0.0.0', port=10000)

@@ -45,3 +45,4 @@ def heartbeat():
 if __name__ == '__main__':
     threading.Thread(target=heartbeat, daemon=True).start()
     app.run(host='0.0.0.0', port=10000)
+response = requests.get('https://api.exchangerate.host/latest?base=EUR&symbols=USD')

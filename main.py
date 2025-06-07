@@ -1,11 +1,12 @@
 import requests
 import threading
 from flask import Flask, request
+import time
 
 app = Flask(__name__)
 
 BOT_TOKEN = '7665383679:AAGa263syK8FdyOiSXHLsUtKEKzFajbZJlM'
-CHAT_ID = 'הכנס_כאן_את_מספר_הטלגרם_שלך'  # למשל: '123456789'
+CHAT_ID = 'הכנס_כאן_את_מספר_הטלגרם_שלך'  # למשל '123456789'
 
 def send_telegram_message(text):
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
@@ -33,9 +34,9 @@ def heartbeat():
             requests.get('https://eur-usd-bot-wb9i.onrender.com/check')
         except:
             pass
-        import time
-        time.sleep(3600)  # שעה
+        time.sleep(3600)
 
+# התחלת ה־heartbeat ברקע
 threading.Thread(target=heartbeat, daemon=True).start()
 
 if __name__ == '__main__':

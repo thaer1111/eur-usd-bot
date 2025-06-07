@@ -37,7 +37,7 @@ def check_eur_usd():
 def heartbeat():
     while True:
         try:
-            requests.get('https://eur-usd-bot-wb9i.onrender.com/')
+            response = requests.get("https://api.exchangerate.host/latest?base=EUR&symbols=USD")
         except:
             pass
         time.sleep(600)  # כל 10 דקות

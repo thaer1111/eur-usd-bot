@@ -26,4 +26,6 @@ def check_eur_usd():
 check_eur_usd.last_rate = 1.08  # ערך התחלתי
 
 if __name__ == '__main__':
+    send_telegram_message("✅ הבוט עלה ועובד!")
+    threading.Thread(target=heartbeat, daemon=True).start()
     app.run(host='0.0.0.0', port=10000)

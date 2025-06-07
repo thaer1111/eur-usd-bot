@@ -2,8 +2,7 @@ import requests
 from flask import Flask, request
 
 app = Flask(__name__)
-
-BOT_TOKEN = '7665383679:AAFdmc0IFQadzxKQKCAJEgjsw1j3dZ3oJoQ'
+ BOT_TOKEN = '7665383679:AAGa263syK8FdyOiSXHLsUtKEKzFajbZJlM'
 CHAT_ID = '1589414763'
 
 def send_telegram_message(text):

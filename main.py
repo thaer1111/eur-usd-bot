@@ -6,7 +6,8 @@ import time
 app = Flask(__name__)
 
 BOT_TOKEN = '7665383679:AAGa263syK8FdyOiSXHLsUtKEKzFajbZJlM'
-CHAT_ID = '1589414763'  # ודא שזה ה-Chat ID הנכון שלך
+CHAT_ID = '1589414763'
+API_KEY = '4IiAdjuN2O9An7o90e4G3ePANmVqQrc7'
 
 def send_telegram_message(text):
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
@@ -19,10 +20,13 @@ def home():
 @app.route('/check', methods=['GET'])
 def check_eur_usd():
     try:
-        response = requests.get("https://api.exchangerate.host/latest?base=EUR&symbols=USD")
+        response = requests.get(f'http://api.exchangeratesapi.io/v1/latest?access_key={API_KEY}&symbols=USD,EUR')
         data = response.json()
+        if 'rates' not in data:
+            send_telegram_message(f"שגיאה בבדיקת שערים: {data}")
+            return 'שגיאה בבדיקה: rates'
         rate = data['rates']['USD']
-        send_telegram_message(f"שער EUR/USD הנוכחי: {rate}")
+        send_telegram_message(f"שער EUR/USD: {rate}")
         return 'Message sent!'
     except Exception as e:
         send_telegram_message(f"שגיאה בבדיקה: {e}")
@@ -30,20 +34,9 @@ def check_eur_usd():
 
 def heartbeat():
     while True:
-        try:
-            response = requests.get("https://api.exchangerate.host/latest?base=EUR&symbols=USD")
-            data = response.json()
-            rate = data['rates']['USD']
-            if abs(rate - heartbeat.last_rate) >= 0.005:
-                direction = "📈 עלייה" if rate > heartbeat.last_rate else "📉 ירידה"
-                send_telegram_message(f"התראה: שינוי חד בשער EUR/USD ({direction}) ➡️ {rate}")
-            heartbeat.last_rate = rate
-        except Exception as e:
-            send_telegram_message(f"שגיאה בבדיקת שערים: {e}")
-        time.sleep(300)  # כל 5 דקות
-
-heartbeat.last_rate = 0.0
-threading.Thread(target=heartbeat, daemon=True).start()
+        send_telegram_message("✅ הבוט פעיל ובודק שערים...")
+        time.sleep(300)
 
 if __name__ == '__main__':
+    threading.Thread(target=heartbeat, daemon=True).start()
     app.run(host='0.0.0.0', port=10000)

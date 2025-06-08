@@ -4,18 +4,16 @@ import time
 from flask import Flask, request
 from datetime import datetime
 import openai
+import os
 
 # הגדרות
 BOT_TOKEN = '7665383679:AAGa263syK8FdyOiSXHLsUtKEKzFajbZJlM'
 CHAT_ID = '1589414763'
-import os
-openai.api_key = os.environ.get('OPENAI_API_KEY')  
+openai.api_key = os.environ.get('OPENAI_API_KEY')  # קבלת מפתח מה־Environment Variables
 
 app = Flask(__name__)
 last_rate = None
 THRESHOLD = 0.005
-
-openai.api_key = OPENAI_API_KEY
 
 def send_telegram_message(text, chat_id=CHAT_ID):
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
@@ -30,7 +28,6 @@ def check_eur_usd():
         response = requests.get("https://api.exchangerate.host/latest?base=EUR&symbols=USD")
         data = response.json()
 
-        # טיפול בתגובה לא תקינה
         if "rates" not in data or "USD" not in data["rates"]:
             send_telegram_message("⚠️ שגיאה בבדיקת שערים: תגובה לא תקינה מהשרת")
             return

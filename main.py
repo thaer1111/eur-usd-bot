@@ -8,7 +8,7 @@ import openai
 # הגדרות
 BOT_TOKEN = '7665383679:AAGa263syK8FdyOiSXHLsUtKEKzFajbZJlM'
 CHAT_ID = '1589414763'
-OPENAI_API_KEY = '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'  # שים כאן את המפתח שלך מ-OpenAI
+OPENAI_API_KEY = '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'  
 
 app = Flask(__name__)
 last_rate = None

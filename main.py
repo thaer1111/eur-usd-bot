@@ -8,10 +8,7 @@ TOKEN = '7665383679:AAGa263syK8FdyOiSXHLsUtKEKzFajbZJlM'
 CHAT_ID = 'your_chat_id_here'  # שים את ה־chat_id שלך כאן
 bot = telegram.Bot(token=TOKEN)
 
-# הגדרת רגישות – שינוי של לפחות 0.005 (50 פיפס)
-THRESHOLD = 0.005
-
-# משתנה לשמירת השער האחרון
+THRESHOLD = 0.005  # שינוי של לפחות 50 פיפס
 last_rate = None
 
 def get_current_rate():
@@ -26,7 +23,6 @@ def send_alert(message):
 def heartbeat():
     bot.send_message(chat_id=CHAT_ID, text="💓 הבוט פעיל ובודק שערים...")
 
-# הפעלה ראשונית עם heartbeat
 heartbeat()
 
 while True:
@@ -47,7 +43,7 @@ while True:
         if datetime.now().minute == 0 and datetime.now().second < 5:
             heartbeat()
 
-        time.sleep(60)  # בדיקה כל דקה
+        time.sleep(60)
 
     except Exception as e:
         print(f"שגיאה: {e}")

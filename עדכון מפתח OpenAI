@@ -7,7 +7,8 @@ from openai import OpenAI
 
 BOT_TOKEN = '7665383679:AAGa263syK8FdyOiSXHLsUtKEKzFajbZJlM'
 CHAT_ID = '1589414763'
-OPENAI_API_KEY = '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'
+import os
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 app = Flask(__name__)
 last_rate = None

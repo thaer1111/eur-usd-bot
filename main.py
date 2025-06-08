@@ -18,22 +18,31 @@ openai.api_key = OPENAI_API_KEY
 
 def send_telegram_message(text, chat_id=CHAT_ID):
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
-    requests.post(url, data={'chat_id': chat_id, 'text': text})
+    try:
+        requests.post(url, data={'chat_id': chat_id, 'text': text})
+    except Exception as e:
+        print(f"שגיאה בשליחה לטלגרם: {e}")
 
 def check_eur_usd():
     global last_rate
     try:
         response = requests.get("https://api.exchangerate.host/latest?base=EUR&symbols=USD")
         data = response.json()
-        rate = float(data['rates']['USD'])
 
+        # טיפול בתגובה לא תקינה
+        if "rates" not in data or "USD" not in data["rates"]:
+            send_telegram_message("⚠️ שגיאה בבדיקת שערים: תגובה לא תקינה מהשרת")
+            return
+
+        rate = float(data["rates"]["USD"])
         now = datetime.now().strftime('%H:%M:%S')
-        print(f"[{now}] EUR/USD: {rate}")
 
         if last_rate is not None and abs(rate - last_rate) >= THRESHOLD:
             change = rate - last_rate
             direction = "⬆️ עלייה חדה" if change > 0 else "⬇️ ירידה חדה"
-            send_telegram_message(f"🚨 {direction} בזיהוי!\nשינוי של {change:.5f} בשער EUR/USD\nשער חדש: {rate:.5f}")
+            send_telegram_message(
+                f"🚨 {direction} בזיהוי!\nשינוי של {change:.5f} בשער EUR/USD\nשער נוכחי: {rate:.5f} ({now})"
+            )
         last_rate = rate
     except Exception as e:
         send_telegram_message(f"שגיאה בבדיקת שערים: {e}")
@@ -52,9 +61,7 @@ def ask_chatgpt(question):
     try:
         response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
-            messages=[
-                {"role": "user", "content": question}
-            ]
+            messages=[{"role": "user", "content": question}]
         )
         return response.choices[0].message.content.strip()
     except Exception as e:
@@ -64,14 +71,14 @@ def ask_chatgpt(question):
 def home():
     return '✅ הבוט רץ!'
 
-@app.route(f"/webhook", methods=["POST"])
+@app.route('/webhook', methods=["POST"])
 def webhook():
     data = request.get_json()
     if "message" in data and "text" in data["message"]:
         chat_id = data["message"]["chat"]["id"]
-        user_text = data["message"]["text"]
-        answer = ask_chatgpt(user_text)
-        send_telegram_message(answer, chat_id)
+        text = data["message"]["text"]
+        reply = ask_chatgpt(text)
+        send_telegram_message(reply, chat_id)
     return 'ok'
 
 threading.Thread(target=loop_check, daemon=True).start()

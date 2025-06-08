@@ -1,50 +1,60 @@
 import requests
+import threading
+from flask import Flask, request
 import time
-import telegram
-from datetime import datetime
 
-# פרטי הבוט
-TOKEN = '7665383679:AAGa263syK8FdyOiSXHLsUtKEKzFajbZJlM'
-CHAT_ID = 'your_chat_id_here'  # שים את ה־chat_id שלך כאן
-bot = telegram.Bot(token=TOKEN)
+app = Flask(__name__)
 
-THRESHOLD = 0.005  # שינוי של לפחות 50 פיפס
-last_rate = None
+BOT_TOKEN = '7665383679:AAGa263syK8FdyOiSXHLsUtKEKzFajbZJlM'
+CHAT_ID = '1589414763'
 
-def get_current_rate():
-    url = "https://api.exchangerate.host/latest?base=EUR&symbols=USD"
-    response = requests.get(url)
-    data = response.json()
-    return float(data["rates"]["USD"])
+last_rate = None  # שמירת השער האחרון
 
-def send_alert(message):
-    bot.send_message(chat_id=CHAT_ID, text=message)
-
-def heartbeat():
-    bot.send_message(chat_id=CHAT_ID, text="💓 הבוט פעיל ובודק שערים...")
-
-heartbeat()
-
-while True:
+def send_telegram_message(text):
+    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
     try:
-        current_rate = get_current_rate()
-        now = datetime.now().strftime('%H:%M:%S')
+        requests.post(url, data={'chat_id': CHAT_ID, 'text': text})
+    except Exception as e:
+        print(f"שגיאה בשליחת הודעה: {e}")
 
-        if last_rate:
-            diff = abs(current_rate - last_rate)
-            if diff >= THRESHOLD:
-                direction = "📈 עלייה" if current_rate > last_rate else "📉 ירידה"
-                message = f"{direction} חדה בזוג EUR/USD\nשער חדש: {current_rate:.5f} ({now})"
-                send_alert(message)
+@app.route('/')
+def home():
+    return 'Bot is running!'
 
-        last_rate = current_rate
+@app.route('/check', methods=['GET'])
+def check_eur_usd():
+    global last_rate
+    try:
+        response = requests.get(
+            "https://api.exchangerate.host/latest?base=EUR&symbols=USD"
+        )
+        data = response.json()
+        rate = float(data['rates']['USD'])
 
-        # heartbeat כל שעה
-        if datetime.now().minute == 0 and datetime.now().second < 5:
-            heartbeat()
+        send_telegram_message(f"שער EUR/USD: {rate}")
 
-        time.sleep(60)
+        if last_rate is not None and abs(rate - last_rate) >= 0.005:
+            change = rate - last_rate
+            direction = "⬆️ עלייה חדה" if change > 0 else "⬇️ ירידה חדה"
+            send_telegram_message(f"🚨 {direction} בזיהוי! שינוי של {change:.5f} בשער EUR/USD")
+
+        last_rate = rate
+        return 'Message sent!'
 
     except Exception as e:
-        print(f"שגיאה: {e}")
-        time.sleep(60)
+        send_telegram_message(f"שגיאה בבדיקת שערים: {e}")
+        return 'Error'
+
+def heartbeat():
+    while True:
+        try:
+            send_telegram_message("✅ הבוט פעיל ובודק שערים...")
+        except:
+            pass
+        time.sleep(1800)  # כל חצי שעה
+
+# התחלת ה-heartbeat ברקע
+threading.Thread(target=heartbeat, daemon=True).start()
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=10000)

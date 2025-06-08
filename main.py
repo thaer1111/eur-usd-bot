@@ -8,7 +8,7 @@ import openai
 # הגדרות
 BOT_TOKEN = '7665383679:AAGa263syK8FdyOiSXHLsUtKEKzFajbZJlM'
 CHAT_ID = '1589414763'
-OPENAI_API_KEY = 'your_openai_key_here'  # עדכן כאן את מפתח ה-API שלך מ-OpenAI
+OPENAI_API_KEY = 'your_openai_key_here'  # שים כאן את המפתח שלך מ-OpenAI
 
 app = Flask(__name__)
 last_rate = None
@@ -51,7 +51,7 @@ def heartbeat():
 def ask_chatgpt(question):
     try:
         response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",  # אפשר לשדרג ל־gpt-4 אם יש לך גישה
+            model="gpt-3.5-turbo",
             messages=[
                 {"role": "user", "content": question}
             ]
@@ -74,7 +74,6 @@ def webhook():
         send_telegram_message(answer, chat_id)
     return 'ok'
 
-# התחלת הלולאות ברקע
 threading.Thread(target=loop_check, daemon=True).start()
 threading.Thread(target=heartbeat, daemon=True).start()
 

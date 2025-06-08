@@ -1,19 +1,17 @@
 import requests
 import threading
 import time
-from flask import Flask, request
+from flask import Flask
 from datetime import datetime
-import openai
-import os
 
 # הגדרות
 BOT_TOKEN = '7665383679:AAGa263syK8FdyOiSXHLsUtKEKzFajbZJlM'
 CHAT_ID = '1589414763'
-openai.api_key = os.environ.get('OPENAI_API_KEY')  # קבלת מפתח מה־Environment Variables
+THRESHOLD = 0.005  # שינוי חד בשער
 
 app = Flask(__name__)
 last_rate = None
-THRESHOLD = 0.005
+daily_rates = []
 
 def send_telegram_message(text, chat_id=CHAT_ID):
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
@@ -34,6 +32,7 @@ def check_eur_usd():
 
         rate = float(data["rates"]["USD"])
         now = datetime.now().strftime('%H:%M:%S')
+        daily_rates.append(rate)
 
         if last_rate is not None and abs(rate - last_rate) >= THRESHOLD:
             change = rate - last_rate
@@ -45,42 +44,38 @@ def check_eur_usd():
     except Exception as e:
         send_telegram_message(f"שגיאה בבדיקת שערים: {e}")
 
+def send_daily_trend():
+    while True:
+        time.sleep(3600 * 24)  # כל 24 שעות
+        if len(daily_rates) > 1:
+            trend = daily_rates[-1] - daily_rates[0]
+            message = (
+                f"📊 סיכום יומי של שער EUR/USD:\n"
+                f"השער התחיל ב: {daily_rates[0]:.5f}\n"
+                f"השער סיים ב: {daily_rates[-1]:.5f}\n"
+                f"{'⬆️ יותר עליות' if trend > 0 else '⬇️ יותר ירידות' if trend < 0 else '➖ יציב'}"
+            )
+            send_telegram_message(message)
+        daily_rates.clear()
+
 def loop_check():
     while True:
         check_eur_usd()
-        time.sleep(3600)
+        time.sleep(3600)  # כל שעה
 
 def heartbeat():
     while True:
         send_telegram_message("💓 הבוט פעיל ובודק שערים כל שעה.")
         time.sleep(3600)
 
-def ask_chatgpt(question):
-    try:
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": question}]
-        )
-        return response.choices[0].message.content.strip()
-    except Exception as e:
-        return f"שגיאה בתקשורת עם ChatGPT: {e}"
-
 @app.route('/')
 def home():
     return '✅ הבוט רץ!'
 
-@app.route('/webhook', methods=["POST"])
-def webhook():
-    data = request.get_json()
-    if "message" in data and "text" in data["message"]:
-        chat_id = data["message"]["chat"]["id"]
-        text = data["message"]["text"]
-        reply = ask_chatgpt(text)
-        send_telegram_message(reply, chat_id)
-    return 'ok'
-
+# הפעלת תהליכים ברקע
 threading.Thread(target=loop_check, daemon=True).start()
 threading.Thread(target=heartbeat, daemon=True).start()
+threading.Thread(target=send_daily_trend, daemon=True).start()
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=10000)
